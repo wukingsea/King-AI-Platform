@@ -1,0 +1,182 @@
+/**
+ * 路由定义与守卫模块
+ *
+ * 职责：
+ *   1. 声明静态路由（constantRoutes）——登录、错误页、个人中心等，启动即注册；
+ *   2. 创建全局 router 实例（Hash 模式：hash 段不发送到服务端，前端产物可随 API 内嵌部署、无需服务端 SPA 回退）；
+ *   3. 定义全局守卫（beforeEach/afterEach）——鉴权、路由注入、进度条控制。
+ */
+import { createWebHashHistory, createRouter, type RouteRecordRaw } from 'vue-router'
+import Layout from '@/layout/index.vue'
+import { ElMessage } from 'element-plus'
+import NProgress from 'nprogress'
+import 'nprogress/nprogress.css'
+import { getToken } from '@/utils/auth'
+import { isHttp } from '@/utils/validate'
+import { isRelogin } from '@/utils/request'
+import { useUserStore, useRoutesStore, useSettingsStore, useSpaceStore } from '@/store'
+import defaultSettings from '@/default-settings'
+import { t } from '@/i18n'
+
+// ==================== 静态路由注册 ====================
+
+/**
+ * 静态路由 ——无权限门槛，启动即注册
+ * 包含：登录、个人中心、重定向页、301 未授权、404 兜底
+ */
+export const constantRoutes = [
+  // 登录
+  {
+    path: '/login',
+    component: () => import('@/modules/framework/auth/pages/login.vue'),
+    hidden: true
+  },
+  // 首页：默认跳转 “/index”
+  {
+    path: '/',
+    redirect: defaultSettings.homePath
+  },
+  // 个人中心：hidden 控制侧栏不显示
+  {
+    path: '/user',
+    component: Layout,
+    hidden: true,
+    redirect: 'noredirect',
+    children: [
+      {
+        name: 'Profile',
+        path: '/user/profile/:activeTab?',
+        component: () => import('@/modules/framework/system/user/pages/profile/index.vue'),
+        meta: { title: t('layout.nav.profile'), icon: 'user' }
+      }
+    ]
+  },
+  // 重定向：内部重定向承载页
+  {
+    path: '/redirect',
+    component: Layout,
+    hidden: true,
+    children: [
+      {
+        path: '/redirect/:path(.*)',
+        component: () => import('@/modules/framework/common/pages/redirect/index.vue')
+      }
+    ]
+  },
+  // 301：未授权或会话过期
+  {
+    path: '/301',
+    component: () => import('@/modules/framework/common/pages/301.vue'),
+    hidden: true
+  },
+  // 404：访问资源不存在。兜底，必须放在末段
+  {
+    path: '/:pathMatch(.*)*',
+    component: () => import('@/modules/framework/common/pages/404.vue'),
+    hidden: true
+  },
+  // Agent 公开对话页（免登录，按发布 URL 直接访问）
+  {
+    path: '/chat/:uuid',
+    component: () => import('@/modules/business/chat/pages/index.vue'),
+    hidden: true
+  }
+]
+
+/**
+ * 路由实例：初始仅加载静态路由，动态路由后续 addRoute 注入
+ */
+const router = createRouter({
+  // Hash 模式（开发 3000 与生产内嵌 API 均可直接部署，无需服务端 History 回退）
+  history: createWebHashHistory(),
+  // 加载静态路由
+  routes: constantRoutes,
+  // 自定义路由切换时的页面滚动行为：前进/后退 恢复历史位置，否则回到顶部
+  scrollBehavior(to, from, savedPosition) {
+    return savedPosition || { top: 0 }
+  }
+})
+
+// ==================== 全局路由守卫 ====================
+
+NProgress.configure({ showSpinner: false })
+
+// 登录白名单（Agent 公开对话页亦免登录，可通过发布 URL 访问）
+const whiteList = ['/login']
+const isWhiteList = (path: string) => whiteList.includes(path) || path.startsWith('/chat')
+
+// 全局前置拦截
+router.beforeEach(async (to, from) => {
+  NProgress.start()
+
+  // 1、白名单：直接放行（登录页、404 等无需鉴权的页面）
+  if (isWhiteList(to.path)) return true
+
+  // 2、已登录：动态路由初始化
+  const hasToken = getToken()
+  if (hasToken) {
+    // 2.1、已登录 & 访问登录页： 踢回首页
+    if (to.path === '/login') {
+      NProgress.done()
+      return { path: '/' }
+    }
+
+    // 2.2、已登录：设置浏览器标签页标题（动态标题）
+    to.meta && to.meta.title && useSettingsStore().setMenuTitle(to.meta.title)
+    // 2.2、已登录 & roles 为空：说明尚未拉取用户信息（首次登录或刷新页面后），需要初始化动态路由
+    if (useUserStore().roles.length === 0) {
+
+      // a、并行初始化：用户信息、动态路由、业务空间三者互不依赖，取耗时最长者，避免串行叠加首屏等待
+      // 业务接口依赖 currentSpaceId 注入 xxl-space-id，空间列表需在路由放行前就绪（失败不阻断，顶部空间切换器内再尝试）
+      isRelogin.show = true
+      try {
+        await Promise.all([
+          useUserStore().getInfo(),
+          useRoutesStore().initRoutes(),
+          useSpaceStore()
+            .loadSpaces()
+            .catch(() => {})
+        ])
+
+        // b、注入动态路由：获取拍平后数据 -> 过滤 http 链接后逐条注入
+        const accessRoutes = useRoutesStore().getFlattenRoutes()
+        accessRoutes.forEach((route) => {
+          // 无 path 的纯目录节点无需外链判断，其余排除外链路由后逐条注入
+          if (!route.path || !isHttp(route.path)) {
+            router.addRoute(route as RouteRecordRaw)
+          }
+        })
+
+        // c、replace: true：注入的路由需当前导航重新匹配，同时避免历史记录残留 “空路由条目”
+        return { ...to, replace: true }
+      } catch (err) {
+        // 路由初始化异常：退出登录
+        await useUserStore().logout()
+        const errMsg = err instanceof Error ?
+            err.message
+            : typeof err === 'string'
+                ? err
+                : JSON.stringify(err)
+        console.debug('Init Router Error:' + errMsg)
+        ElMessage.error(errMsg)
+        return { path: '/' }
+      } finally {
+        isRelogin.show = false
+      }
+    }
+    return true
+  }
+
+  // 3、未登录：跳转登录页并回传原路径供登录后重定向
+
+  NProgress.done()
+  return `/login?redirect=${to.fullPath}`
+})
+
+// 全局后置拦截
+router.afterEach((to) => {
+  NProgress.done()
+  to.meta && to.meta.title && useSettingsStore().setMenuTitle(to.meta.title)
+})
+
+export default router

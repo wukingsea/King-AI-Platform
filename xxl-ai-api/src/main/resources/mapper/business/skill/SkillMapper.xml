@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xxl.ai.api.business.skill.mapper.SkillMapper">
+
+	<resultMap id="Skill" type="com.xxl.ai.api.business.skill.model.entity.Skill" >
+		<result column="id" property="id" />
+		<result column="space_id" property="spaceId" />
+		<result column="name" property="name" />
+		<result column="description" property="description" />
+		<result column="version" property="version" />
+		<result column="status" property="status" />
+		<result column="add_time" property="addTime" />
+		<result column="update_time" property="updateTime" />
+	</resultMap>
+
+	<sql id="Base_Column_List">
+		t.id,
+		t.space_id,
+		t.name,
+		t.description,
+		t.version,
+		t.status,
+		t.add_time,
+		t.update_time
+	</sql>
+
+	<insert id="insert" parameterType="com.xxl.ai.api.business.skill.model.entity.Skill" useGeneratedKeys="true" keyProperty="id" >
+		INSERT INTO xxl_ai_skill (
+			space_id, name, description, version, status, add_time, update_time
+		) VALUES (
+			 #{spaceId}, #{name}, #{description}, #{version}, #{status}, NOW(), NOW()
+		 );
+	</insert>
+
+	<delete id="delete" parameterType="java.util.HashMap">
+		DELETE FROM xxl_ai_skill WHERE id = #{id}
+	</delete>
+
+	<delete id="deleteByIds" parameterType="java.util.HashMap">
+		DELETE FROM xxl_ai_skill
+		WHERE id in
+		<foreach collection="ids" item="item" open="(" close=")" separator="," >
+			#{item}
+		</foreach>
+	</delete>
+
+	<update id="update" parameterType="com.xxl.ai.api.business.skill.model.entity.Skill" >
+		UPDATE xxl_ai_skill
+		SET name = #{name},
+			description = #{description},
+			version = #{version},
+			status = #{status},
+			update_time = NOW()
+		WHERE id = #{id}
+	</update>
+
+	<update id="touch" parameterType="java.util.HashMap" >
+		UPDATE xxl_ai_skill
+		SET update_time = NOW()
+		WHERE id = #{id}
+	</update>
+
+	<select id="load" parameterType="java.util.HashMap" resultMap="Skill">
+		SELECT <include refid="Base_Column_List" />
+		FROM xxl_ai_skill AS t
+		WHERE t.id = #{id}
+	</select>
+
+	<select id="listBySpace" parameterType="java.util.HashMap" resultMap="Skill">
+		SELECT <include refid="Base_Column_List" />
+		FROM xxl_ai_skill AS t
+		WHERE t.space_id = #{spaceId}
+		ORDER BY t.id ASC
+	</select>
+
+	<select id="countBySpaceId" parameterType="java.util.HashMap" resultType="int">
+		SELECT count(1)
+		FROM xxl_ai_skill AS t
+		WHERE t.space_id = #{spaceId}
+	</select>
+
+	<select id="listByIds" parameterType="java.util.HashMap" resultMap="Skill">
+		SELECT <include refid="Base_Column_List" />
+		FROM xxl_ai_skill AS t
+		WHERE t.id in
+		<foreach collection="ids" item="item" open="(" close=")" separator="," >
+			#{item}
+		</foreach>
+	</select>
+
+	<select id="countByName" parameterType="java.util.HashMap" resultType="int">
+		SELECT count(1)
+		FROM xxl_ai_skill AS t
+		WHERE t.space_id = #{spaceId}
+			AND t.name = #{name}
+		<if test="excludeId gt 0">
+			AND t.id != #{excludeId}
+		</if>
+	</select>
+
+	<select id="pageList" parameterType="java.util.HashMap" resultMap="Skill">
+		SELECT <include refid="Base_Column_List" />
+		FROM xxl_ai_skill AS t
+		WHERE t.space_id = #{spaceId}
+		<if test="name != null and name != ''">
+			AND t.name like CONCAT(CONCAT('%', #{name}), '%')
+		</if>
+		<if test="status gt -1">
+			AND t.status = #{status}
+		</if>
+		ORDER BY t.id ASC
+		LIMIT #{offset}, #{pagesize}
+	</select>
+
+	<select id="pageListCount" parameterType="java.util.HashMap" resultType="int">
+		SELECT count(1)
+		FROM xxl_ai_skill AS t
+		WHERE t.space_id = #{spaceId}
+		<if test="name != null and name != ''">
+			AND t.name like CONCAT(CONCAT('%', #{name}), '%')
+		</if>
+		<if test="status gt -1">
+			AND t.status = #{status}
+		</if>
+	</select>
+
+</mapper>

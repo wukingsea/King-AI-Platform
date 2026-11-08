@@ -1,0 +1,59 @@
+package com.xxl.ai.api.business.agent.service;
+
+import com.xxl.ai.api.business.agent.model.dto.AgentDTO;
+import com.xxl.ai.api.business.agent.model.entity.Agent;
+import com.xxl.tool.response.PageModel;
+import com.xxl.tool.response.Response;
+
+import java.util.List;
+
+/**
+ * Agent Service
+ *
+ * 承载 Agent 元数据 CRUD 与发布/取消发布；运行时沙箱清理等底层能力委托 harness。
+ *
+ * @author xxl-ai 2026-09-05
+ */
+public interface AgentService {
+
+    /**
+     * 分页查询 Agent 列表
+     */
+    PageModel<AgentDTO> pageList(long spaceId, int offset, int pagesize, String name, int publishStatus);
+
+    /**
+     * 按ID查询 Agent
+     */
+    Response<Agent> load(long id);
+
+    /**
+     * 查询空间下全部 Agent（轻量列表，供下拉选择）
+     */
+    List<Agent> loadAll(long spaceId);
+
+    /**
+     * 新增 Agent
+     */
+    Response<String> insert(long spaceId, AgentDTO dto);
+
+    /**
+     * 批量删除 Agent
+     */
+    Response<String> deleteByIds(List<Long> ids);
+
+    /**
+     * 更新 Agent
+     */
+    Response<String> update(AgentDTO dto);
+
+    /**
+     * 发布：生成访问 URL（UUID）、置已发布
+     */
+    Response<String> publish(long id);
+
+    /**
+     * 取消发布：置未发布
+     */
+    Response<String> unpublish(long id);
+
+}

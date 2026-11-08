@@ -1,0 +1,367 @@
+<!--
+  SupplierModel（供应商模型管理）
+  供应商模型列表维护，按供应商过滤（supplierId 来自路由 query）
+-->
+<template>
+  <div class="app-container">
+    <div class="content-inner">
+      <!-- 搜索栏 -->
+      <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="table.showSearch">
+        <el-form-item :label="t('business.supplier.name')">
+          <el-input
+            v-model="queryParams.name"
+            :placeholder="t('common.inputPlaceholder', [t('business.supplier.name')])"
+            clearable
+            style="width: 200px"
+            @keyup.enter="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item :label="t('business.supplier.modelType')" prop="type">
+          <el-select v-model="queryParams.type" :placeholder="t('common.selectPlaceholder')" clearable style="width: 130px">
+            <el-option :label="t('common.all')" :value="-1" />
+            <el-option v-for="item in modelTypeOptions" :key="item.code" :label="item.title" :value="item.code" />
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" icon="Search" @click="handleQuery">{{ t('common.search') }}</el-button>
+          <el-button icon="Refresh" @click="resetQuery">{{ t('common.reset') }}</el-button>
+        </el-form-item>
+      </el-form>
+
+      <!-- 操作按钮 -->
+      <el-row :gutter="10" class="mb8">
+        <el-col :span="1.5">
+          <el-button type="primary" plain icon="Plus" @click="handleAdd" v-hasPermi="['supplier:default']">{{ t('common.add') }}</el-button>
+        </el-col>
+        <el-col :span="1.5">
+          <el-button type="success" plain icon="Edit" :disabled="table.single" @click="handleUpdate" v-hasPermi="['supplier:default']">
+            {{ t('common.modify') }}
+          </el-button>
+        </el-col>
+        <el-col :span="1.5">
+          <el-button type="danger" plain icon="Delete" :disabled="table.multiple" @click="handleDelete" v-hasPermi="['supplier:default']">
+            {{ t('common.delete') }}
+          </el-button>
+        </el-col>
+        <el-col :span="1.5">
+          <el-button type="warning" plain icon="Download" @click="handleAutoImport" v-hasPermi="['supplier:default']">
+            {{ t('business.supplier.autoImport') }}
+          </el-button>
+        </el-col>
+        <RightToolbar v-model:showSearch="table.showSearch" @queryTable="getList" />
+      </el-row>
+
+      <!-- 模型列表 -->
+      <el-table v-loading="table.loading" :data="table.list" @selection-change="handleSelectionChange">
+        <el-table-column type="selection" width="45" align="center" />
+        <el-table-column :label="t('business.supplier.modelName')" align="center" prop="name" min-width="110" :show-overflow-tooltip="true" />
+        <el-table-column :label="t('business.supplier.modelCode')" align="center" prop="model" min-width="120" :show-overflow-tooltip="true" />
+        <el-table-column :label="t('business.supplier.modelType')" align="center" width="130">
+          <template #default="scope">
+            <el-tag>{{ modelTypeTitle(scope.row.type) }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('common.status')" align="center" width="110">
+          <template #default="scope">
+            <el-tag :type="scope.row.status === 0 ? 'success' : 'danger'">
+              {{ scope.row.status === 0 ? t('common.normal') : t('common.disabled') }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('common.operation')" align="center" width="150" class-name="small-padding fixed-width">
+          <template #default="scope">
+            <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['supplier:default']">{{
+              t('common.modify')
+            }}</el-button>
+            <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['supplier:default']">{{
+              t('common.delete')
+            }}</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <!-- 分页 -->
+      <Pagination
+        v-show="table.total > 0"
+        :total="table.total"
+        v-model:page="queryParams.pageNum"
+        v-model:limit="queryParams.pageSize"
+        @pagination="getList"
+      />
+    </div>
+
+    <!-- 添加或修改模型对话框 -->
+    <el-dialog :title="formState.title" v-model="formState.visible" width="560px" append-to-body>
+      <el-form ref="formRef" :model="formState.form" :rules="formState.rules" label-width="90px">
+        <el-form-item :label="t('business.supplier.modelName')" prop="name">
+          <el-input v-model="formState.form.name" maxlength="50" />
+        </el-form-item>
+        <el-form-item :label="t('business.supplier.modelCode')" prop="model">
+          <el-input v-model="formState.form.model" maxlength="100" />
+        </el-form-item>
+        <el-form-item :label="t('business.supplier.modelType')" prop="type">
+          <el-select v-model="formState.form.type" style="width: 100%">
+            <el-option v-for="item in modelTypeOptions" :key="item.code" :label="item.title" :value="item.code" />
+          </el-select>
+        </el-form-item>
+        <el-form-item :label="t('common.status')">
+          <el-radio-group v-model="formState.form.status">
+            <el-radio :value="0">{{ t('common.normal') }}</el-radio>
+            <el-radio :value="1">{{ t('common.disabled') }}</el-radio>
+          </el-radio-group>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button type="primary" @click="submitForm">{{ t('modal.confirmButton') }}</el-button>
+          <el-button @click="cancel">{{ t('modal.cancelButton') }}</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+    <!-- 自动导入模型对话框 -->
+    <el-dialog :title="importState.title" v-model="importState.visible" width="640px" append-to-body>
+      <div style="padding-bottom: 10px">
+        <el-input
+          v-model="importSearch"
+          :placeholder="t('common.inputPlaceholder', [t('business.supplier.remoteModelId')])"
+          clearable
+          style="width: 220px"
+        />
+      </div>
+      <el-table
+        ref="importTableRef"
+        v-loading="importState.loading"
+        :data="importFilteredList"
+        height="400"
+        @selection-change="handleImportSelectionChange"
+      >
+        <el-table-column type="selection" width="45" align="center" :selectable="(row) => !row.imported" />
+        <el-table-column :label="t('common.serialNo')" align="center" type="index" width="60" />
+        <el-table-column
+          :label="t('business.supplier.remoteModelId')"
+          align="left"
+          header-align="left"
+          class-name="import-model-id"
+          label-class-name="import-model-id"
+          prop="modelId"
+          min-width="140"
+          :show-overflow-tooltip="true"
+        />
+        <el-table-column :label="t('common.status')" align="center" width="110">
+          <template #default="scope">
+            <el-tag v-if="scope.row.imported" type="info">{{ t('business.supplier.remoteImported') }}</el-tag>
+          </template>
+        </el-table-column>
+        <template #empty>
+          <el-empty :description="importState.loading ? t('business.supplier.importLoading') : t('business.supplier.importModelPlaceholder')" />
+        </template>
+      </el-table>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button type="primary" :disabled="!importState.ids.length" @click="confirmImport">{{ t('modal.confirmButton') }}</el-button>
+          <el-button @click="cancelImport">{{ t('modal.cancelButton') }}</el-button>
+        </div>
+      </template>
+    </el-dialog>
+  </div>
+</template>
+
+<script setup lang="ts">
+defineOptions({ name: 'SupplierModel' })
+import { t } from '@/i18n'
+import { listSupplierModel, addSupplierModel, updateSupplierModel, delSupplierModel, loadRemoteModels, importRemoteModels } from '../api'
+import { useFormReset } from '@/composables/useFormReset'
+import { useEnumOption } from '@/composables/useEnumOption'
+import { usePageParams } from '@/composables/usePageParams'
+import modal from '@/utils/modal'
+import { RightToolbar, Pagination } from '@/components'
+import type { FormState, TableState } from '@/types'
+import type { RemoteModel, SupplierModel, SupplierModelQuery } from '../types'
+import type { FormInstance, TableInstance } from 'element-plus'
+import { computed, ref } from 'vue'
+import { useRoute } from 'vue-router'
+
+const resetForm = useFormReset()
+const route = useRoute()
+
+/** 当前供应商ID（来自路由 query：supplierId） */
+const supplierId = Number(route.query.supplierId)
+
+interface ModelForm extends SupplierModel {}
+
+// --------------------------------- ref data ---------------------------------
+const formRef = ref<FormInstance>() /* 模型编辑表单 ref */
+
+// 模型类型枚举选项（ModelTypeEnum，来自后端）
+const { ModelTypeEnum: modelTypeOptions } = useEnumOption('ModelTypeEnum')
+
+const queryParams = ref<SupplierModelQuery>({ pageNum: 1, pageSize: 10, supplierId, name: undefined, type: -1 })
+
+const table = ref<TableState<SupplierModel>>({ list: [], total: 0, loading: true, showSearch: true, ids: [], single: true, multiple: true })
+
+const formState = ref<FormState<ModelForm>>({
+  visible: false,
+  title: '',
+  form: {},
+  rules: {
+    name: [{ required: true, message: t('common.requiredMsg', [t('business.supplier.modelName')]), trigger: 'blur' }],
+    model: [{ required: true, message: t('common.requiredMsg', [t('business.supplier.modelCode')]), trigger: 'blur' }]
+  }
+})
+
+/* 自动导入弹框状态（远程模型列表 + 勾选结果） */
+const importState = ref<{ visible: boolean; title: string; loading: boolean; list: RemoteModel[]; ids: string[] }>({
+  visible: false,
+  title: '',
+  loading: false,
+  list: [],
+  ids: []
+})
+const importTableRef = ref<TableInstance>() /* 导入弹框表格 ref */
+const importSearch = ref('') /* 导入弹框搜索关键词（按模型标识过滤） */
+
+/** 导入弹框列表（客户端按模型标识过滤） */
+const importFilteredList = computed(() => {
+  const keyword = importSearch.value.trim().toLowerCase()
+  if (!keyword) {
+    return importState.value.list
+  }
+  return importState.value.list.filter((item) => (item.modelId ?? '').toLowerCase().includes(keyword))
+})
+
+// --------------------------------- fun ---------------------------------
+/** 模型类型文案（按枚举选项解析，未命中回退原始值） */
+function modelTypeTitle(type: number) {
+  return modelTypeOptions.value.find((i) => i.code === type)?.title ?? String(type)
+}
+
+function getList() {
+  table.value.loading = true
+  const params = usePageParams(queryParams)()
+  listSupplierModel(params).then((response) => {
+    table.value.list = response.data.data
+    table.value.total = response.data.total
+    table.value.loading = false
+  })
+}
+function reset() {
+  formState.value.form = { supplierId, name: undefined, model: undefined, type: 0, status: 0 }
+  resetForm('formRef')
+}
+function handleQuery() {
+  queryParams.value.pageNum = 1
+  getList()
+}
+function resetQuery() {
+  resetForm('queryRef')
+  handleQuery()
+}
+function handleSelectionChange(selection: SupplierModel[]) {
+  table.value.ids = selection.map((i) => i.id as number)
+  table.value.single = selection.length !== 1
+  table.value.multiple = !selection.length
+}
+function handleAdd() {
+  reset()
+  formState.value.visible = true
+  formState.value.title = t('common.titleAdd', [t('business.supplier.model')])
+}
+function handleUpdate(row: any) {
+  reset()
+  const id = row?.id ?? table.value.ids[0]
+  if (id == null) return
+  const current = table.value.list.find((item) => item.id === id)
+  if (!current) return
+  formState.value.form = { ...current }
+  formState.value.visible = true
+  formState.value.title = t('common.titleEdit', [t('business.supplier.model')])
+}
+function handleDelete(row: any) {
+  const ids = row?.id ?? table.value.ids
+  if (ids == null || (Array.isArray(ids) && ids.length === 0)) return
+  modal
+    .confirm(t('business.supplier.confirmDeleteModel', [ids]))
+    .then(() => delSupplierModel(ids))
+    .then(() => {
+      getList()
+      modal.msgSuccess(t('common.deleteSuccess'))
+    })
+    .catch(() => {})
+}
+function submitForm() {
+  formRef.value!.validate((valid) => {
+    if (!valid) return
+    const submitData = { ...formState.value.form, supplierId }
+    const req = submitData.id != null ? updateSupplierModel(submitData) : addSupplierModel(submitData)
+    req.then(() => {
+      modal.msgSuccess(submitData.id != null ? t('common.updateSuccess') : t('common.addSuccess'))
+      formState.value.visible = false
+      getList()
+    })
+  })
+}
+function cancel() {
+  formState.value.visible = false
+  reset()
+}
+
+// --------------------------------- 自动导入 ---------------------------------
+/** 打开自动导入弹框并拉取远程可用模型（已导入项置灰不可选） */
+function handleAutoImport() {
+  importState.value.visible = true
+  importState.value.title = t('business.supplier.importModelTitle')
+  importState.value.loading = true
+  importState.value.list = []
+  importState.value.ids = []
+  importSearch.value = ''
+  importTableRef.value?.clearSelection()
+  loadRemoteModels(supplierId)
+    .then((response) => {
+      importState.value.list = response.data
+    })
+    .catch(() => {
+      importState.value.visible = false
+    })
+    .finally(() => {
+      importState.value.loading = false
+    })
+}
+
+/** 导入弹框勾选变化 */
+function handleImportSelectionChange(selection: RemoteModel[]) {
+  importState.value.ids = selection.map((i) => i.modelId as string)
+}
+
+/** 确认导入勾选模型并刷新列表 */
+function confirmImport() {
+  const ids = importState.value.ids
+  if (!ids.length) {
+    modal.msgWarning(t('business.supplier.importEmpty'))
+    return
+  }
+  importRemoteModels(supplierId, ids)
+    .then(() => {
+      modal.msgSuccess(t('business.supplier.importSuccess'))
+      importState.value.visible = false
+      queryParams.value.pageNum = 1
+      getList()
+    })
+    .catch(() => {})
+}
+
+/** 取消自动导入 */
+function cancelImport() {
+  importState.value.visible = false
+  importState.value.ids = []
+}
+
+// --------------------------------- page init ---------------------------------
+getList()
+</script>
+<style scoped lang="scss">
+/* 导入弹框：模型标识列左对齐时增加左侧留白，避免贴边且右侧过空 */
+:deep(.import-model-id .cell) {
+  padding-left: 40px;
+}
+</style>

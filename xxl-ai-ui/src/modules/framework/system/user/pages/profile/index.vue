@@ -1,0 +1,103 @@
+<!--
+  页面：Profile（个人中心）
+  功能：展示个人信息与基本资料/修改密码 tab 切换
+-->
+<template>
+  <div class="app-container">
+    <el-row :gutter="20">
+      <el-col :span="6" :xs="24">
+        <!-- 个人信息 -->
+        <el-card class="box-card">
+          <template v-slot:header>
+            <div class="clearfix">
+              <span>{{ t('system.user.personalInfo') }}</span>
+            </div>
+          </template>
+
+          <div>
+            <!-- 用户信息列表 -->
+            <ul class="list-group list-group-striped">
+              <li class="list-group-item">
+                <SvgIcon icon-class="user" />
+                {{ t('system.user.account') }}
+                <div class="pull-right">{{ user.username }}</div>
+              </li>
+              <li class="list-group-item">
+                <SvgIcon icon-class="email" />
+                {{ t('system.user.emailLabel') }}
+                <div class="pull-right">{{ user.email }}</div>
+              </li>
+              <li class="list-group-item">
+                <SvgIcon icon-class="peoples" />
+                {{ t('system.user.roleLabel') }}
+                <div class="pull-right">{{ roleName }}</div>
+              </li>
+              <li class="list-group-item">
+                <SvgIcon icon-class="date" />
+                {{ t('system.user.createDate') }}
+                <div class="pull-right">{{ user.addTime }}</div>
+              </li>
+            </ul>
+          </div>
+        </el-card>
+      </el-col>
+
+      <!-- 基本资料 / 修改密码 -->
+      <el-col :span="18" :xs="24">
+        <el-card>
+          <template v-slot:header>
+            <div class="clearfix">
+              <span>{{ t('system.user.basicInfo') }}</span>
+            </div>
+          </template>
+          <el-tabs v-model="selectedTab">
+            <!-- 基本资料 -->
+            <el-tab-pane :label="t('system.user.basicInfo')" name="userinfo">
+              <userInfo :user="user" />
+            </el-tab-pane>
+
+            <!-- 修改密码 -->
+            <el-tab-pane :label="t('system.user.modifyPassword')" name="resetPwd">
+              <resetPwd />
+            </el-tab-pane>
+          </el-tabs>
+        </el-card>
+      </el-col>
+    </el-row>
+  </div>
+</template>
+
+<script setup lang="ts">
+defineOptions({ name: 'Profile' })
+// 引入
+import { t } from '@/i18n'
+import userInfo from './userInfo.vue'
+import resetPwd from './resetPwd.vue'
+import { getUserProfile } from '../../api'
+import type { User } from '../../types'
+import { onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
+import { SvgIcon } from '@/components'
+
+const route = useRoute() // 路由
+const selectedTab = ref('userinfo') // 当前选中的 tab
+const user = ref<User>({}) // 用户信息
+const roleName = ref('') // 角色名称
+
+/** 获取当前登录用户个人信息 */
+function getUser() {
+  getUserProfile().then((res) => {
+    user.value = res.data
+    roleName.value = (user.value.roleName as string) || ''
+  })
+}
+
+// 初始化：根据路由参数激活 tab，并加载用户信息
+onMounted(() => {
+  const activeTab = route.params && route.params.activeTab
+  if (activeTab) {
+    selectedTab.value = activeTab as string
+  }
+  getUser()
+})
+</script>

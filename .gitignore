@@ -1,0 +1,35 @@
+# for backend
+*.iml
+/.idea
+**/target/
+.classpath
+.project
+.DS_Store
+.gitattributes
+
+# for backend-resource
+xxl-ai-api/src/main/resources/static/*
+
+# for fontend
+node_modules/
+dist/
+.vite/
+package-lock.json
+auto-imports.d.ts
+
+# for ai
+.opencode
+.omo
+.claude
+.specify
+specs
+xxl-ai-spec
+
+# for desk
+xxl-ai-desk/out/
+xxl-ai-desk/release/
+xxl-ai-desk/*.log
+xxl-ai-desk/*.local
+xxl-ai-desk/*.sqlite
+xxl-ai-desk/*.sqlite3
+xxl-ai-desk/data/

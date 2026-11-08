@@ -1,0 +1,182 @@
+# docker-compose version
+
+services:
+
+  # ==================== 核心存储：mysql + redis ====================
+
+  mysql:
+    image: mysql:8.4
+    container_name: xxl-ai-mysql
+    environment:
+      # 数据库设置：密码、实例名称
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: xxl_ai
+      TZ: Asia/Shanghai
+    ports:
+      - "3306:3306"
+    volumes:
+      # 说明：仅数据库首次初始化时执行；
+      - ../doc/db/tables_xxl_ai.sql:/docker-entrypoint-initdb.d/tables_xxl_ai.sql:ro
+      # 3、数据库持久化目录位置，建议自定义：
+      - ${MYSQL_PATH}/conf:/etc/mysql/conf.d
+      - ${MYSQL_PATH}/logs:/var/log/mysql
+      - ${MYSQL_PATH}/data:/var/lib/mysql
+    command: >-
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+    networks:
+      - xxl-ai-network
+
+  redis:
+    image: redis:8.2
+    container_name: xxl-ai-redis
+    environment:
+      # Redis设置：访问密码
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}"]
+    ports:
+      - "6379:6379"
+    volumes:
+      # Redis配置：持久化目录
+      - ${REDIS_PATH}/data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "if [ -z \"$$REDIS_PASSWORD\" ]; then redis-cli ping; else redis-cli -a \"$$REDIS_PASSWORD\" --no-auth-warning ping; fi"]
+      timeout: 20s
+      retries: 10
+    networks:
+      - xxl-ai-network
+
+  # ==================== 向量数据库：etcd + minio + milvus ====================
+  etcd:
+    image: quay.io/coreos/etcd:v3.5.25
+    container_name: xxl-ai-etcd
+    environment:
+      - ETCD_AUTO_COMPACTION_MODE=revision
+      - ETCD_AUTO_COMPACTION_RETENTION=1000
+      - ETCD_QUOTA_BACKEND_BYTES=4294967296
+      - ETCD_SNAPSHOT_COUNT=50000
+    volumes:
+      - ${MILVUS_PATH}/etcd:/etcd
+    command: etcd -advertise-client-urls=http://etcd:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
+    healthcheck:
+      test: ["CMD", "etcdctl", "endpoint", "health"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - xxl-ai-network
+
+  minio:
+    image: milvusdb/minio:RELEASE.2024-12-18T13-15-44Z
+    container_name: xxl-ai-minio
+    environment:
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+    ports:
+      - "9001:9001"
+      - "9000:9000"
+    volumes:
+      - ${MILVUS_PATH}/minio:/minio_data
+    command: minio server /minio_data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - xxl-ai-network
+
+  milvus:
+    image: milvusdb/milvus:v3.0.2
+    container_name: xxl-ai-milvus
+    # 说明：以 root 运行，避免数据卷属主非 milvus 时的权限问题
+    user: "0:0"
+    command: ["milvus", "run", "standalone"]
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      MINIO_REGION: us-east-1
+      ETCD_ENDPOINTS: etcd:2379
+      MINIO_ADDRESS: minio:9000
+    volumes:
+      - ${MILVUS_PATH}/milvus:/var/lib/milvus
+    ports:
+      - "19530:19530"
+      - "9091:9091"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
+      interval: 30s
+      start_period: 90s
+      timeout: 20s
+      retries: 3
+    depends_on:
+      - etcd
+      - minio
+    networks:
+      - xxl-ai-network
+
+  attu:
+    image: zilliz/attu:v3.0.1
+    container_name: xxl-ai-attu
+    ports:
+      - "3030:3000"
+    environment:
+      MILVUS_ADDRESS: milvus:19530
+    depends_on:
+      - milvus
+    networks:
+      - xxl-ai-network
+
+  # ==================== 业务系统：api + sample ====================
+
+  xxl-ai-api:
+    # 6、本地Build设置
+    image: xuxueli/xxl-ai-api:local
+    container_name: xxl-ai-api
+    pull_policy: never
+    build:
+      context: ../xxl-ai-api
+      dockerfile: Dockerfile
+    environment:
+      # 7、数据库密码设置，需要与上文Mysql中保持一致：
+      PARAMS: >-
+        --server.port=${XXL_AI_API_PORT}
+        --spring.datasource.url=jdbc:mysql://mysql:3306/xxl_ai?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true&serverTimezone=Asia/Shanghai
+        --spring.datasource.username=root 
+        --spring.datasource.password=${MYSQL_ROOT_PASSWORD}
+        --spring.data.redis.host=redis
+        --spring.data.redis.port=6379
+        --spring.data.redis.password=${REDIS_PASSWORD}
+        --xxl-ai.milvus.uri=http://milvus:19530
+    ports:
+      - "${XXL_AI_API_PORT}:${XXL_AI_API_PORT}"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - xxl-ai-network
+
+  xxl-ai-sample:
+    image: xuxueli/xxl-ai-sample:local
+    container_name: xxl-ai-sample
+    pull_policy: never
+    build:
+      context: ../xxl-ai-sample
+      dockerfile: Dockerfile
+    environment:
+      PARAMS: >-
+        --server.port=${XXL_AI_SAMPLE_PORT}
+    ports:
+      - "${XXL_AI_SAMPLE_PORT}:${XXL_AI_SAMPLE_PORT}"
+    networks:
+      - xxl-ai-network
+
+networks:
+  xxl-ai-network:
+    driver: bridge
