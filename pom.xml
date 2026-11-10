@@ -2,18 +2,18 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>com.xuxueli</groupId>
-	<artifactId>xxl-ai</artifactId>
-	<version>1.5.0-SNAPSHOT</version>
+	<groupId>com.king.ai</groupId>
+	<artifactId>king-ai</artifactId>
+	<version>1.0.0-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
 	<name>${project.artifactId}</name>
-	<description>XXL-AI, A highly-scalable AI development platform. </description>
-	<url>https://www.xuxueli.com/</url>
+	<description>King AI Platform, an enterprise-grade AI Agent development platform.</description>
+	<url>https://github.com/wukingsea/King-AI-Platform</url>
 
 	<modules>
-		<module>xxl-ai-api</module>
-		<module>xxl-ai-sample</module>
+		<module>king-ai-api</module>
+		<module>king-ai-sample</module>
 	</modules>
 
 	<properties>
@@ -124,7 +124,7 @@
 				<artifactId>spring-ai-agent-utils</artifactId>
 				<version>0.13.0</version>
 			</dependency>
-			<!-- spring-ai：MCP Server（注解式 @McpTool，Streamable HTTP，供 xxl-ai-sample 使用） -->
+			<!-- spring-ai：MCP Server（注解式 @McpTool，Streamable HTTP，供 king-ai-sample 使用） -->
 			<dependency>
 				<groupId>org.springframework.ai</groupId>
 				<artifactId>spring-ai-starter-mcp-server-webmvc</artifactId>
@@ -155,9 +155,9 @@
 	</licenses>
 	<scm>
 		<tag>master</tag>
-		<url>https://github.com/xuxueli/xxl-ai.git</url>
-		<connection>scm:git:https://github.com/xuxueli/xxl-ai.git</connection>
-		<developerConnection>scm:git:git@github.com:xuxueli/xxl-ai.git</developerConnection>
+		<url>https://github.com/wukingsea/King-AI-Platform.git</url>
+		<connection>scm:git:https://github.com/wukingsea/King-AI-Platform.git</connection>
+		<developerConnection>scm:git:git@github.com:wukingsea/King-AI-Platform.git</developerConnection>
 	</scm>
 	<developers>
 		<developer>
@@ -165,6 +165,11 @@
 			<name>xuxueli</name>
 			<email>931591021@qq.com</email>
 			<url>https://github.com/xuxueli</url>
+		</developer>
+		<developer>
+			<id>king-ai</id>
+			<name>King AI Platform Team</name>
+			<url>https://github.com/wukingsea/King-AI-Platform</url>
 		</developer>
 	</developers>
 

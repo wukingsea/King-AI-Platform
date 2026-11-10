@@ -6,17 +6,17 @@ services:
 
   mysql:
     image: mysql:8.4
-    container_name: xxl-ai-mysql
+    container_name: king-ai-mysql
     environment:
       # 数据库设置：密码、实例名称
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: xxl_ai
+      MYSQL_DATABASE: king_ai
       TZ: Asia/Shanghai
     ports:
       - "3306:3306"
     volumes:
       # 说明：仅数据库首次初始化时执行；
-      - ../doc/db/tables_xxl_ai.sql:/docker-entrypoint-initdb.d/tables_xxl_ai.sql:ro
+      - ../doc/db/tables_king_ai.sql:/docker-entrypoint-initdb.d/tables_king_ai.sql:ro
       # 3、数据库持久化目录位置，建议自定义：
       - ${MYSQL_PATH}/conf:/etc/mysql/conf.d
       - ${MYSQL_PATH}/logs:/var/log/mysql
@@ -29,11 +29,11 @@ services:
       timeout: 20s
       retries: 10
     networks:
-      - xxl-ai-network
+      - king-ai-network
 
   redis:
     image: redis:8.2
-    container_name: xxl-ai-redis
+    container_name: king-ai-redis
     environment:
       # Redis设置：访问密码
       REDIS_PASSWORD: ${REDIS_PASSWORD}
@@ -48,12 +48,12 @@ services:
       timeout: 20s
       retries: 10
     networks:
-      - xxl-ai-network
+      - king-ai-network
 
   # ==================== 向量数据库：etcd + minio + milvus ====================
   etcd:
     image: quay.io/coreos/etcd:v3.5.25
-    container_name: xxl-ai-etcd
+    container_name: king-ai-etcd
     environment:
       - ETCD_AUTO_COMPACTION_MODE=revision
       - ETCD_AUTO_COMPACTION_RETENTION=1000
@@ -68,11 +68,11 @@ services:
       timeout: 20s
       retries: 3
     networks:
-      - xxl-ai-network
+      - king-ai-network
 
   minio:
     image: milvusdb/minio:RELEASE.2024-12-18T13-15-44Z
-    container_name: xxl-ai-minio
+    container_name: king-ai-minio
     environment:
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECRET_KEY: minioadmin
@@ -88,11 +88,11 @@ services:
       timeout: 20s
       retries: 3
     networks:
-      - xxl-ai-network
+      - king-ai-network
 
   milvus:
     image: milvusdb/milvus:v3.0.2
-    container_name: xxl-ai-milvus
+    container_name: king-ai-milvus
     # 说明：以 root 运行，避免数据卷属主非 milvus 时的权限问题
     user: "0:0"
     command: ["milvus", "run", "standalone"]
@@ -117,11 +117,11 @@ services:
       - etcd
       - minio
     networks:
-      - xxl-ai-network
+      - king-ai-network
 
   attu:
     image: zilliz/attu:v3.0.1
-    container_name: xxl-ai-attu
+    container_name: king-ai-attu
     ports:
       - "3030:3000"
     environment:
@@ -129,54 +129,54 @@ services:
     depends_on:
       - milvus
     networks:
-      - xxl-ai-network
+      - king-ai-network
 
   # ==================== 业务系统：api + sample ====================
 
-  xxl-ai-api:
+  king-ai-api:
     # 6、本地Build设置
-    image: xuxueli/xxl-ai-api:local
-    container_name: xxl-ai-api
+    image: kingai/king-ai-api:local
+    container_name: king-ai-api
     pull_policy: never
     build:
-      context: ../xxl-ai-api
+      context: ../king-ai-api
       dockerfile: Dockerfile
     environment:
       # 7、数据库密码设置，需要与上文Mysql中保持一致：
       PARAMS: >-
-        --server.port=${XXL_AI_API_PORT}
-        --spring.datasource.url=jdbc:mysql://mysql:3306/xxl_ai?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true&serverTimezone=Asia/Shanghai
+        --server.port=${KING_AI_API_PORT}
+        --spring.datasource.url=jdbc:mysql://mysql:3306/king_ai?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true&serverTimezone=Asia/Shanghai
         --spring.datasource.username=root 
         --spring.datasource.password=${MYSQL_ROOT_PASSWORD}
         --spring.data.redis.host=redis
         --spring.data.redis.port=6379
         --spring.data.redis.password=${REDIS_PASSWORD}
-        --xxl-ai.milvus.uri=http://milvus:19530
+        --king-ai.milvus.uri=http://milvus:19530
     ports:
-      - "${XXL_AI_API_PORT}:${XXL_AI_API_PORT}"
+      - "${KING_AI_API_PORT}:${KING_AI_API_PORT}"
     depends_on:
       mysql:
         condition: service_healthy
       redis:
         condition: service_healthy
     networks:
-      - xxl-ai-network
+      - king-ai-network
 
-  xxl-ai-sample:
-    image: xuxueli/xxl-ai-sample:local
-    container_name: xxl-ai-sample
+  king-ai-sample:
+    image: kingai/king-ai-sample:local
+    container_name: king-ai-sample
     pull_policy: never
     build:
-      context: ../xxl-ai-sample
+      context: ../king-ai-sample
       dockerfile: Dockerfile
     environment:
       PARAMS: >-
-        --server.port=${XXL_AI_SAMPLE_PORT}
+        --server.port=${KING_AI_SAMPLE_PORT}
     ports:
-      - "${XXL_AI_SAMPLE_PORT}:${XXL_AI_SAMPLE_PORT}"
+      - "${KING_AI_SAMPLE_PORT}:${KING_AI_SAMPLE_PORT}"
     networks:
-      - xxl-ai-network
+      - king-ai-network
 
 networks:
-  xxl-ai-network:
+  king-ai-network:
     driver: bridge

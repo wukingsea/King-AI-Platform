@@ -1,0 +1,155 @@
+package com.king.ai.api.business.agent.controller;
+
+import com.king.ai.api.business.agent.model.dto.AgentDTO;
+import com.king.ai.api.business.agent.model.entity.Agent;
+import com.king.ai.api.business.agent.service.AgentService;
+import com.king.ai.api.business.space.model.SpaceContext;
+import com.king.ai.api.business.space.service.SpaceService;
+import com.xxl.sso.core.annotation.XxlSso;
+import com.xxl.tool.response.PageModel;
+import com.xxl.tool.response.Response;
+import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Agent管理 Controller：Agent 在线配置（标准 CRUD）+ 发布/取消发布
+ *
+ * @author king-ai 2026-09-05
+ */
+@RestController
+@RequestMapping("/agent")
+public class AgentController {
+
+    @Resource
+    private AgentService agentService;
+    @Resource
+    private SpaceService spaceService;
+
+    /**
+     * 分页查询 Agent 列表
+     */
+    @RequestMapping("/pageList")
+    @XxlSso(permission = "agent:default")
+    public Response<PageModel<AgentDTO>> pageList(HttpServletRequest request,
+                                                  @RequestHeader(value = "xxl-space-id", required = false) Integer spaceId,
+                                                  @RequestParam(required = false, defaultValue = "0") int offset,
+                                                  @RequestParam(required = false, defaultValue = "10") int pagesize,
+                                                  String name,
+                                                  @RequestParam(required = false, defaultValue = "-1") int publishStatus) {
+        Response<SpaceContext> spaceResp = spaceService.checkSpace(request, spaceId);
+        if (!spaceResp.isSuccess()) {
+            return Response.ofFail(spaceResp.getMsg());
+        }
+        PageModel<AgentDTO> pageModel = agentService.pageList(spaceResp.getData().getSpaceId(), offset, pagesize, name, publishStatus);
+        return Response.ofSuccess(pageModel);
+    }
+
+    /**
+     * Load查询（按ID查询单条 Agent）
+     */
+    @RequestMapping("/load")
+    @XxlSso(permission = "agent:default")
+    public Response<Agent> load(@RequestParam("id") long id) {
+        return agentService.load(id);
+    }
+
+    /**
+     * 查询空间下全部 Agent（轻量列表，供下拉选择）
+     */
+    @RequestMapping("/loadAll")
+    @XxlSso(permission = "agent:default")
+    public Response<List<Agent>> loadAll(HttpServletRequest request,
+                                         @RequestHeader(value = "xxl-space-id", required = false) Integer spaceId) {
+        Response<SpaceContext> spaceResp = spaceService.checkSpace(request, spaceId);
+        if (!spaceResp.isSuccess()) {
+            return Response.ofFail(spaceResp.getMsg());
+        }
+        return Response.ofSuccess(agentService.loadAll(spaceResp.getData().getSpaceId()));
+    }
+
+    /**
+     * 新增 Agent
+     */
+    @RequestMapping("/insert")
+    @XxlSso(permission = "agent:default")
+    public Response<String> insert(HttpServletRequest request,
+                                   @RequestHeader(value = "xxl-space-id", required = false) Integer spaceId,
+                                   @RequestBody AgentDTO dto) {
+        Response<SpaceContext> spaceResp = spaceService.checkSpace(request, spaceId);
+        if (!spaceResp.isSuccess()) {
+            return Response.ofFail(spaceResp.getMsg());
+        }
+        return agentService.insert(spaceResp.getData().getSpaceId(), dto);
+    }
+
+    /**
+     * 批量删除 Agent
+     */
+    @RequestMapping("/delete")
+    @XxlSso(permission = "agent:default")
+    public Response<String> delete(HttpServletRequest request,
+                                   @RequestHeader(value = "xxl-space-id", required = false) Integer spaceId,
+                                   @RequestBody List<Long> ids) {
+        Response<SpaceContext> spaceResp = spaceService.checkSpace(request, spaceId);
+        if (!spaceResp.isSuccess()) {
+            return Response.ofFail(spaceResp.getMsg());
+        }
+        return agentService.deleteByIds(ids);
+    }
+
+    /**
+     * 更新 Agent
+     */
+    @RequestMapping("/update")
+    @XxlSso(permission = "agent:default")
+    public Response<String> update(HttpServletRequest request,
+                                   @RequestHeader(value = "xxl-space-id", required = false) Integer spaceId,
+                                   @RequestBody AgentDTO dto) {
+        Response<SpaceContext> spaceResp = spaceService.checkSpace(request, spaceId);
+        if (!spaceResp.isSuccess()) {
+            return Response.ofFail(spaceResp.getMsg());
+        }
+        return agentService.update(dto);
+    }
+
+    /**
+     * 发布：生成访问 URL（UUID）
+     */
+    @RequestMapping("/publish")
+    @XxlSso(permission = "agent:default")
+    public Response<String> publish(HttpServletRequest request,
+                                    @RequestHeader(value = "xxl-space-id", required = false) Integer spaceId,
+                                    @RequestBody Map<String, Long> body) {
+        Response<SpaceContext> spaceResp = spaceService.checkSpace(request, spaceId);
+        if (!spaceResp.isSuccess()) {
+            return Response.ofFail(spaceResp.getMsg());
+        }
+        long id = body.get("id") != null ? body.get("id") : 0;
+        return agentService.publish(id);
+    }
+
+    /**
+     * 取消发布
+     */
+    @RequestMapping("/unpublish")
+    @XxlSso(permission = "agent:default")
+    public Response<String> unpublish(HttpServletRequest request,
+                                      @RequestHeader(value = "xxl-space-id", required = false) Integer spaceId,
+                                      @RequestBody Map<String, Long> body) {
+        Response<SpaceContext> spaceResp = spaceService.checkSpace(request, spaceId);
+        if (!spaceResp.isSuccess()) {
+            return Response.ofFail(spaceResp.getMsg());
+        }
+        long id = body.get("id") != null ? body.get("id") : 0;
+        return agentService.unpublish(id);
+    }
+
+}

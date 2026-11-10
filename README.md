@@ -1,137 +1,62 @@
-<p align="center">
-    <img src="https://www.xuxueli.com/project/static/xxl-job/images/xxl-logo.jpg" width="150">
-    <h3 align="center">XXL-AI</h3>
-    <p align="center">
-        XXL-AI, an AI Agent development platform.
-        <br>
-        <a href="https://www.xuxueli.com/xxl-ai/"><strong>-- Home Page --</strong></a>
-        <br>
-        <br>
-        <a href="https://github.com/xuxueli/xxl-ai/actions">
-            <img src="https://github.com/xuxueli/xxl-ai/workflows/Java%20CI/badge.svg" >
-        </a>
-        <a href="https://github.com/xuxueli/xxl-ai/releases">
-            <img src="https://img.shields.io/github/release/xuxueli/xxl-ai.svg" >
-        </a>
-        <a href="https://github.com/xuxueli/xxl-ai/">
-            <img src="https://img.shields.io/github/stars/xuxueli/xxl-ai" >
-        </a>
-        <a href="http://www.gnu.org/licenses/gpl-3.0.html">
-            <img src="https://img.shields.io/badge/license-GPLv3-blue.svg" >
-        </a>
-        <a href="https://www.xuxueli.com/page/donate.html">
-            <img src="https://img.shields.io/badge/%24-donate-ff69b4.svg?style=flat-square" >
-        </a>
-    </p>
-</p>
+# King AI Platform
 
+> 企业级 AI Agent 开发平台 · P0 品牌化基线
+> 基于上游 [xuxueli/xxl-ai](https://github.com/xuxueli/xxl-ai) 1.5.0-SNAPSHOT（提交 `1854b1e`）改造。
 
-## Introduction
+## 一、项目简介
 
-XXL-AI is an AI Agent development platform delivered in two forms — **Cloud** (web / server) and **Desk** (desktop client). They share one brand with complementary capabilities, and can be used independently or combined:
+King AI Platform 是一个「云本结合」的 AI Agent 开发平台，同一 Monorepo 提供两种可独立使用、也可组合的交付形态：
 
-XXL-AI 是一个「**云本结合**」的 AI Agent 开发平台，提供两种同源同品牌、能力互补的交付形态，可按团队规模与使用场景独立选用，也可组合使用：
+| 形态 | 面向 | 定位 | 依赖 |
+|---|---|---|---|
+| **云版 Cloud**（Web 服务端） | 团队、多业务空间 | Agent 编排与一键发布、RAG 知识库、MCP 工具、SKILL 技能、多供应商模型、RBAC 权限治理 | MySQL + Redis + Milvus |
+| **本地版 Desk**（桌面客户端） | 个人 | 本地优先，直接操作本机项目 / 终端 / Git / 浏览器，数据仅落本地 SQLite | 零外部依赖 |
 
-> - **云版**：以 Agent 编排为中枢，标准化扩展「MCP + SKILL + RAG」，配套多供应商、空间隔离、RBAC 权限与流式对话等工程化底座，可快速构建并一键发布 Agent。开源、开箱即用，支持集群部署与生产落地。
-> - **本地版**：跨平台桌面客户端：面向个人的本地工作台，围绕本机项目目录提供对话、文件读写、终端命令、Git 审核与文件 / 浏览器工具面板等能力；支持多 Agent 编排、项目长期记忆，安装即用、离线可用，数据仅落本地 SQLite。
+本仓库当前处于 **P0 品牌化阶段**：工程标识、Maven 坐标、Java 包名、镜像与配置前缀已统一为 `com.king.ai` / `king-ai-*`，功能与上游保持一致，作为后续企业级改造的基线。
 
-| 项 | 云版（Web 服务端） | 本地版（Desk 桌面端） |
+## 二、模块结构
+
+| 模块 | 说明 |
+|---|---|
+| `king-ai-api` | 云版后端，Spring Boot 4.1.2 / Java 17，端口 8080；`business`（agent/chat/session/knowledge/mcp/skill/memory/space/supplier）+ `framework` 两层 |
+| `king-ai-ui` | 云版前端，Vue 3.5 + Element Plus + TypeScript + Vite，开发端口 3000 |
+| `king-ai-desk` | 本地版桌面端，Electron + Vue3 + Pi Agent 运行时 + SQLite |
+| `king-ai-sample` | 示例 MCP 服务，Spring AI `@McpTool`，端口 8091 |
+| `docker` | 一键部署栈：mysql / redis / etcd / minio / milvus / attu / api / sample |
+| `doc` | 官方文档、建表脚本 `db/tables_king_ai.sql`、界面截图 |
+| `.agents/skills` | AI 编程助手开发规范（king-ai / king-ai-desk 两套 SKILL.md） |
+
+## 三、快速开始
+
+```bash
+# 后端（Maven 聚合 king-ai-api + king-ai-sample）
+mvn -B package --file pom.xml
+
+# 云版前端
+cd king-ai-ui && pnpm install && pnpm dev
+
+# 桌面端
+cd king-ai-desk && pnpm install && pnpm dev
+
+# 一键部署
+cd docker && docker compose up -d
+```
+
+开发期前后端分离（UI 3000 / API 8080）；部署期前端产物内嵌进 API jar，单包单端口发布。详细部署与配置见 `doc/King-AI-Platform官方文档.md`。
+
+## 四、来源与许可（重要）
+
+- 上游仓库：https://github.com/xuxueli/xxl-ai ，作者 xuxueli（许雪里）
+- 许可证：**GNU GPL v3**，见 [LICENSE](LICENSE)。原作者版权声明完整保留。
+- 本仓库为上游的衍生作品。依据 GPL-3.0，若对外分发或提供网络服务以外的交付，衍生作品需继续以 GPL-3.0 开源并保留版权声明；仅企业内部自用不触发分发义务。
+- 如计划闭源商业化，需另行取得上游作者授权或更换许可方案。
+
+## 五、改造记录
+
+| 阶段 | 内容 | 状态 |
 |---|---|---|
-| 形态 | B/S Web 应用，浏览器访问 | C/S 桌面应用，一键安装（mac / win / linux） |
-| 面向 | 团队——多用户、多业务空间（Tenant） | 个人——单用户本地工作台 |
-| 定位 | Agent 编排、一键发布、权限治理 | 本地优先，直接操作本机项目与系统能力 |
-| 扩展 | MCP + SKILL + RAG，多供应商，流式对话 | 本地文件 / 终端 / 浏览器面板，三档权限模式 |
-| 模块 | `xxl-ai-api` + `xxl-ai-ui`（+ `xxl-ai-sample`） | `xxl-ai-desk` |
-| 依赖 | MySQL + Redis + Milvus | 零依赖（仅本地 SQLite） |
+| P0 | 品牌化：Maven 坐标 / Java 包名 / 模块名 / 配置前缀 / 镜像名 / 文档与 UI 文案统一为 King AI Platform | ✅ 已完成 |
+| P1 | 企业安全：★ AK/SK + HMAC-SHA256 签名鉴权、统一身份认证对接、审计留痕、敏感配置加密 | ⏳ 规划中 |
+| P2 | 平台化：★ Spring Cloud Gateway / Nacos / Resilience4j / OpenFeign 与可观测体系 | ⏳ 规划中 |
 
-## Documentation
-- [中文文档](https://www.xuxueli.com/xxl-ai/)
-
-
-## Communication
-- [社区交流](https://www.xuxueli.com/page/community.html)
-
-
-## Features
-
-### Cloud（云版）
-
-- **Agent 编排与一键发布（核心亮点）**
-
-- 1、Agent 编排：模型 + 系统指令 + 知识库 + MCP + SKILL 组合为 Agent，各类资源均支持多选绑定；
-- 2、一键发布：发布后生成 UUID 公开访问地址，管理端可查看该 Agent 的访客对话与消息记录；
-- 3、流式对话：SSE 流式输出（思考过程 / 回复内容），基于 Redis Stream 无状态化，支持集群部署与断线 / 刷新续传；
-
-- **MCP + SKILL + RAG，让 Agent 真能干活（标准化扩展）**
-
-- 4、RAG 知识库：知识库 + 文档管理，文档分片向量化入库（Milvus），对话时检索上下文自动注入；
-- 5、MCP 工具：支持远程（Streamable HTTP）与本地（stdio）MCP 服务接入，工具自动装配给 Agent，另附示例 MCP 服务 `xxl-ai-sample`；
-- 6、SKILL 技能：以 `SKILL.md` + 文件树沉淀领域知识与脚本，自动物化为 Agent 可执行的技能目录；
-
-- **多供应商与工程化底座，支持稳定上线**
-
-- 7、多模型供应商：统一接入 OpenAI 兼容协议（Deepseek、智谱GLM、Ollama、OpenCode 等），支持供应商与模型两级管理、连通性测试与远程模型导入（区分对话 / 嵌入模型）；
-- 8、空间隔离：多业务空间（Tenant）隔离数据，用户按空间授权，管理端与公开端共享权限体系；
-- 9、账号安全：基于 XXL-SSO 登录认证，登录态（token）存于 Redis，支持集群部署与 SSO 集成；
-- 10、权限管控：基于 RBAC 的菜单 / 按钮级权限，动态菜单下发、零路由改动；
-- 11、系统管理：用户、系统配置、审计日志在线管理；
-- 12、一键部署：随带 Docker Compose 一键部署栈（mysql + redis + milvus + api + sample）；
-
-- **研发与架构**
-
-- 13、Monorepo + 前后端分离：一套仓库统一托管 后端 API 与 前端 UI，统一版本与依赖管理；开发期前后端独立启动，部署期前端产物内嵌进 API jar 单包单端口发布；
-- 14、AI + SKILL 驱动：内置开发 SKILL，AI 编程助手一键加载，按平台规范直生业务代码并落位，显著加速业务开发；
-- 15、响应式 UI 与国际化：Vue3 + Element Plus + TypeScript，提供中文 / 英文两种语言；
-- 16、可扩展架构：标准分层分包、业务模块自包含，模型 / 对话 / RAG / MCP / SKILL 运行时统一收口支撑层；
-
-### Desk（本地版）
-
-- **本地优先，项目即工作区（核心亮点）**
-
-- 1、跨平台开箱即用：Electron + Vue3 + TypeScript，支持 mac / win / linux；单文件 SQLite 本地存储，数据不出本机，运行目录可自定义；
-- 2、项目即工作区：项目 1:1 绑定本地目录，会话归属项目，Agent 直接在本机工程上工作；项目可独立开启长期记忆，跨会话沉淀偏好与决策；
-
-- **多 Agent 编排与扩展中心**
-
-- 3、多 Agent：按 Agent 配置系统指令、SKILL、MCP 与内置工具，新建会话必须选择 Agent，保存后下一轮即时生效；
-- 4、统一扩展中心：MCP / SKILL / 内置工具集中管理并支持市场发现，按 Agent 勾选装配，未选中的能力不参与对话；
-
-- **多供应商与可观测**
-
-- 5、执行过程可观测：思考 → 工具 → 正文按发生顺序时间线渲染，工具调用展示参数 / 状态 / 耗时；输入框底部会话状态信息条汇总会话统计、Token 用量与上下文占用，点击展开明细；
-- 6、多供应商与进程隔离：兼容 OpenAI 协议（OpenCodeGo / Ollama / Deepseek / 智谱GLM 等），Pi 运行于独立 utilityProcess，长任务不阻塞 UI；支持多主题与中英双语。
-
-- **权限可控与丰富内置工具**
-
-- 7、三档权限 + 目录沙箱：仅可查看 / 工作区内修改 / 完全权限随会话持久化；越界写入在输入框内联审批，支持「本次 / 本会话允许」，敏感操作统一拦截；
-- 8、右侧工具面板：文件 / Git / 终端 / 浏览器统一为 Tab，目录树、编辑、命令与多标签页随会话隔离；
-
-## Development
-
-于2026年6月，整合 XXL-BOOT 中的AI插件模块，升级为独立的 AI应用开发平台 XXL-AI。
-
-于2026年9月，发布 1.0.0 版本，提供 Agent 编排、RAG 知识库、MCP 工具、SKILL 技能等核心功能，支持一键发布与流式对话。
-
-## Contributing
-Contributions are welcome! Open a pull request to fix a bug, or open an [Issue](https://github.com/xuxueli/xxl-ai/issues/) to discuss a new feature or change.
-
-欢迎参与项目贡献！比如提交PR修复一个bug，或者新建 [Issue](https://github.com/xuxueli/xxl-ai/issues/) 讨论新特性或者变更。
-
-
-## Contributing
-更多接入的公司，欢迎在 [登记地址](https://github.com/xuxueli/xxl-ai/issues/1 ) 登记，登记仅仅为了产品推广。
-
-
-## Copyright and License
-This product is open source and free, and will continue to provide free community technical support. Individual or enterprise users are free to access and use.
-
-- Licensed under the GNU General Public License (GPL) v3.
-- Copyright (c) 2015-present, xuxueli.
-
-产品开源免费，并且将持续提供免费的社区技术支持。个人或企业内部可自由的接入和使用。
-
-
-## Donate
-No matter how much the amount is enough to express your thought, thank you very much ：）     [To donate](https://www.xuxueli.com/page/donate.html )
-
-无论金额多少都足够表达您这份心意，非常感谢 ：）      [前往捐赠](https://www.xuxueli.com/page/donate.html )
+> 当前版本保持 XXL 原生技术栈（Spring Boot 单体 + XXL-SSO + MySQL/Redis/Milvus），未引入额外中间件。

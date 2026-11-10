@@ -1,16 +1,16 @@
-# XXL-AI 脚手架使用与开发规范
+# King-AI 脚手架使用与开发规范
 
-XXL-AI 以 Monorepo 托管「Spring Boot 后端 + Vue3 前端 + Electron 桌面端」。按运行模式加载对应 Skill：**模式专属的流程、结构、落位、命令与校验一律在 Skill 内**，本文件只保留跨模式通用的原则、约定与索引。
+King-AI 以 Monorepo 托管「Spring Boot 后端 + Vue3 前端 + Electron 桌面端」。按运行模式加载对应 Skill：**模式专属的流程、结构、落位、命令与校验一律在 Skill 内**，本文件只保留跨模式通用的原则、约定与索引。
 
 ## 一、项目概览
 
 | 模块 | 说明 |
 |---|---|
-| `xxl-ai-api` | 后端 API（Spring Boot），端口 8080，SSO 登录态存 Redis；部署期前端产物内嵌于此，单包单端口对外 |
-| `xxl-ai-ui` | Vue3 前端（Element Plus + TypeScript + Vite），开发端口 3000（Hash 路由） |
-| `xxl-ai-sample` | 示例 MCP 服务（spring-ai `@McpTool`，Streamable HTTP），端口 8091 |
-| `xxl-ai-desk` | 本地版桌面客户端（Electron + Vue3 + Pi + SQLite/Drizzle） |
-| `doc/db` | 数据库初始化脚本（`xxl_ai`：用户/配置/审计日志等框架表与种子数据） |
+| `king-ai-api` | 后端 API（Spring Boot），端口 8080，SSO 登录态存 Redis；部署期前端产物内嵌于此，单包单端口对外 |
+| `king-ai-ui` | Vue3 前端（Element Plus + TypeScript + Vite），开发端口 3000（Hash 路由） |
+| `king-ai-sample` | 示例 MCP 服务（spring-ai `@McpTool`，Streamable HTTP），端口 8091 |
+| `king-ai-desk` | 本地版桌面客户端（Electron + Vue3 + Pi + SQLite/Drizzle） |
+| `doc/db` | 数据库初始化脚本（`king_ai`：用户/配置/审计日志等框架表与种子数据） |
 | `docker` | 一键部署栈（mysql + redis + milvus(etcd/minio/attu) + api(内嵌前端) + sample） |
 
 通用依赖：`xxl-tool`（工具与统一响应，经 `xxl-sso-core` 传递）、`xxl-sso`（`@XxlSso` 鉴权）、MyBatis（Mapper + XML）、MySQL、Redis、spring-ai（OpenAI 兼容模型 / Milvus / MCP SDK）。
@@ -19,8 +19,8 @@ XXL-AI 以 Monorepo 托管「Spring Boot 后端 + Vue3 前端 + Electron 桌面�
 
 | 模式 | Skill | 覆盖范围 |
 |---|---|---|
-| 前后端分离（云版） | `.agents/skills/xxl-ai/SKILL.md` | `xxl-ai-api` + `xxl-ai-ui`：环境与命令、工程结构、business/harness 边界、落位清单与骨架、菜单/枚举、数据库、前端与 i18n 落位、校验清单 |
-| 本地版（Desk） | `.agents/skills/xxl-ai-desk/SKILL.md` | `xxl-ai-desk`：三进程架构、依赖方向、契约与 IPC、落位模板、界面外壳、Agent 运行时、校验清单 |
+| 前后端分离（云版） | `.agents/skills/king-ai/SKILL.md` | `king-ai-api` + `king-ai-ui`：环境与命令、工程结构、business/harness 边界、落位清单与骨架、菜单/枚举、数据库、前端与 i18n 落位、校验清单 |
+| 本地版（Desk） | `.agents/skills/king-ai-desk/SKILL.md` | `king-ai-desk`：三进程架构、依赖方向、契约与 IPC、落位模板、界面外壳、Agent 运行时、校验清单 |
 
 两者互不依赖。新增/改造功能前先加载匹配的 Skill，按其标准流程作业；两边的规则冲突时以对应 Skill 为准。
 

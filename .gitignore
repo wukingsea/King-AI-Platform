@@ -8,7 +8,7 @@
 .gitattributes
 
 # for backend-resource
-xxl-ai-api/src/main/resources/static/*
+king-ai-api/src/main/resources/static/*
 
 # for fontend
 node_modules/
@@ -23,13 +23,13 @@ auto-imports.d.ts
 .claude
 .specify
 specs
-xxl-ai-spec
+king-ai-spec
 
 # for desk
-xxl-ai-desk/out/
-xxl-ai-desk/release/
-xxl-ai-desk/*.log
-xxl-ai-desk/*.local
-xxl-ai-desk/*.sqlite
-xxl-ai-desk/*.sqlite3
-xxl-ai-desk/data/
+king-ai-desk/out/
+king-ai-desk/release/
+king-ai-desk/*.log
+king-ai-desk/*.local
+king-ai-desk/*.sqlite
+king-ai-desk/*.sqlite3
+king-ai-desk/data/
