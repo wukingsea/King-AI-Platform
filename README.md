@@ -1,62 +1,62 @@
 # King AI Platform
 
-> 企业级 AI Agent 开发平台 · P0 品牌化基线
-> 基于上游 [xuxueli/xxl-ai](https://github.com/xuxueli/xxl-ai) 1.5.0-SNAPSHOT（提交 `1854b1e`）改造。
+> Enterprise-grade AI Agent development platform · P0 rebranding baseline
+> Adapted from upstream [xuxueli/xxl-ai](https://github.com/xuxueli/xxl-ai) 1.5.0-SNAPSHOT (commit `1854b1e`).
 
-## 一、项目简介
+## 1. Overview
 
-King AI Platform 是一个「云本结合」的 AI Agent 开发平台，同一 Monorepo 提供两种可独立使用、也可组合的交付形态：
+King AI Platform is a "cloud + local" AI Agent development platform. A single monorepo provides two delivery forms that can be used independently or together:
 
-| 形态 | 面向 | 定位 | 依赖 |
+| Edition | Audience | Positioning | Dependencies |
 |---|---|---|---|
-| **云版 Cloud**（Web 服务端） | 团队、多业务空间 | Agent 编排与一键发布、RAG 知识库、MCP 工具、SKILL 技能、多供应商模型、RBAC 权限治理 | MySQL + Redis + Milvus |
-| **本地版 Desk**（桌面客户端） | 个人 | 本地优先，直接操作本机项目 / 终端 / Git / 浏览器，数据仅落本地 SQLite | 零外部依赖 |
+| **Cloud** (web server) | Teams, multiple business spaces | Agent orchestration and one-click publishing, RAG knowledge bases, MCP tools, SKILL skills, multi-vendor models, RBAC governance | MySQL + Redis + Milvus |
+| **Desk** (desktop client) | Individuals | Local-first; works directly with local projects / terminal / Git / browser; data is stored only in local SQLite | No external dependencies |
 
-本仓库当前处于 **P0 品牌化阶段**：工程标识、Maven 坐标、Java 包名、镜像与配置前缀已统一为 `com.king.ai` / `king-ai-*`，功能与上游保持一致，作为后续企业级改造的基线。
+This repository is currently in the **P0 rebranding phase**: project identifiers, Maven coordinates, Java package names, image names and configuration prefixes have been unified as `com.king.ai` / `king-ai-*`. Functionality remains identical to upstream and serves as the baseline for subsequent enterprise enhancements.
 
-## 二、模块结构
+## 2. Module Layout
 
-| 模块 | 说明 |
+| Module | Description |
 |---|---|
-| `king-ai-api` | 云版后端，Spring Boot 4.1.2 / Java 17，端口 8080；`business`（agent/chat/session/knowledge/mcp/skill/memory/space/supplier）+ `framework` 两层 |
-| `king-ai-ui` | 云版前端，Vue 3.5 + Element Plus + TypeScript + Vite，开发端口 3000 |
-| `king-ai-desk` | 本地版桌面端，Electron + Vue3 + Pi Agent 运行时 + SQLite |
-| `king-ai-sample` | 示例 MCP 服务，Spring AI `@McpTool`，端口 8091 |
-| `docker` | 一键部署栈：mysql / redis / etcd / minio / milvus / attu / api / sample |
-| `doc` | 官方文档、建表脚本 `db/tables_king_ai.sql`、界面截图 |
-| `.agents/skills` | AI 编程助手开发规范（king-ai / king-ai-desk 两套 SKILL.md） |
+| `king-ai-api` | Cloud backend, Spring Boot 4.1.2 / Java 17, port 8080; two layers: `business` (agent/chat/session/knowledge/mcp/skill/memory/space/supplier) + `framework` |
+| `king-ai-ui` | Cloud frontend, Vue 3.5 + Element Plus + TypeScript + Vite, dev port 3000 |
+| `king-ai-desk` | Desktop edition, Electron + Vue 3 + Pi Agent runtime + SQLite |
+| `king-ai-sample` | Sample MCP server, Spring AI `@McpTool`, port 8091 |
+| `docker` | One-click deployment stack: mysql / redis / etcd / minio / milvus / attu / api / sample |
+| `doc` | Official documentation, schema script `db/tables_king_ai.sql`, UI screenshots |
+| `.agents/skills` | Development guidelines for AI coding assistants (two SKILL.md sets: king-ai / king-ai-desk) |
 
-## 三、快速开始
+## 3. Quick Start
 
 ```bash
-# 后端（Maven 聚合 king-ai-api + king-ai-sample）
+# Backend (Maven aggregates king-ai-api + king-ai-sample)
 mvn -B package --file pom.xml
 
-# 云版前端
+# Cloud frontend
 cd king-ai-ui && pnpm install && pnpm dev
 
-# 桌面端
+# Desktop client
 cd king-ai-desk && pnpm install && pnpm dev
 
-# 一键部署
+# One-click deployment
 cd docker && docker compose up -d
 ```
 
-开发期前后端分离（UI 3000 / API 8080）；部署期前端产物内嵌进 API jar，单包单端口发布。详细部署与配置见 `doc/King-AI-Platform官方文档.md`。
+During development, frontend and backend run separately (UI 3000 / API 8080). For deployment, the frontend build is embedded into the API jar and shipped as a single package on a single port. See `doc/King-AI-Platform官方文档.md` for detailed deployment and configuration instructions.
 
-## 四、来源与许可（重要）
+## 4. Origin and License (Important)
 
-- 上游仓库：https://github.com/xuxueli/xxl-ai ，作者 xuxueli（许雪里）
-- 许可证：**GNU GPL v3**，见 [LICENSE](LICENSE)。原作者版权声明完整保留。
-- 本仓库为上游的衍生作品。依据 GPL-3.0，若对外分发或提供网络服务以外的交付，衍生作品需继续以 GPL-3.0 开源并保留版权声明；仅企业内部自用不触发分发义务。
-- 如计划闭源商业化，需另行取得上游作者授权或更换许可方案。
+- Upstream repository: https://github.com/xuxueli/xxl-ai, author xuxueli (许雪里)
+- License: **GNU GPL v3**, see [LICENSE](LICENSE). The original author's copyright notices are fully retained.
+- This repository is a derivative work of the upstream project. Under GPL-3.0, if the derivative work is distributed externally (delivery beyond providing a network service), it must remain open source under GPL-3.0 with copyright notices retained; purely internal enterprise use does not trigger distribution obligations.
+- If you plan closed-source commercialization, you must obtain separate authorization from the upstream author or adopt a different licensing arrangement.
 
-## 五、改造记录
+## 5. Change Log
 
-| 阶段 | 内容 | 状态 |
+| Phase | Scope | Status |
 |---|---|---|
-| P0 | 品牌化：Maven 坐标 / Java 包名 / 模块名 / 配置前缀 / 镜像名 / 文档与 UI 文案统一为 King AI Platform | ✅ 已完成 |
-| P1 | 企业安全：★ AK/SK + HMAC-SHA256 签名鉴权、统一身份认证对接、审计留痕、敏感配置加密 | ⏳ 规划中 |
-| P2 | 平台化：★ Spring Cloud Gateway / Nacos / Resilience4j / OpenFeign 与可观测体系 | ⏳ 规划中 |
+| P0 | Rebranding: Maven coordinates / Java package names / module names / config prefixes / image names / docs and UI copy unified as King AI Platform | ✅ Done |
+| P1 | Enterprise security: ★ AK/SK + HMAC-SHA256 signature authentication, unified identity integration, audit trails, encryption of sensitive configuration | ⏳ Planned |
+| P2 | Platformization: ★ Spring Cloud Gateway / Nacos / Resilience4j / OpenFeign and observability stack | ⏳ Planned |
 
-> 当前版本保持 XXL 原生技术栈（Spring Boot 单体 + XXL-SSO + MySQL/Redis/Milvus），未引入额外中间件。
+> The current version keeps the native XXL tech stack (Spring Boot monolith + XXL-SSO + MySQL/Redis/Milvus) without additional middleware.
