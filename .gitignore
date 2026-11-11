@@ -33,3 +33,6 @@ king-ai-desk/*.local
 king-ai-desk/*.sqlite
 king-ai-desk/*.sqlite3
 king-ai-desk/data/
+# for docker (local secrets & data; use docker/.env.example as template)
+docker/.env
+docker/data/

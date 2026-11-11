@@ -263,7 +263,7 @@ java -jar king-ai-api/target/king-ai-api-*.jar
 ```
 # 第一步：代码clone本部 + 前往仓库目录
 git clone https://github.com/wukingsea/King-AI-Platform.git
-cd ./king-ai
+cd ./King-AI-Platform
 
 # 第二步：构建前端并同步产物（npm run build 构建 dist，npm run sync:dist 复制到 king-ai-api 静态资源目录）
 cd king-ai-ui && npm install && npm run build && npm run sync:dist && cd ..
@@ -271,9 +271,9 @@ cd king-ai-ui && npm install && npm run build && npm run sync:dist && cd ..
 # 第三步：构建后端
 mvn clean package
 
-# 第四步：进入 docker 目录（支持自定义 .env 配置，如修改 MYSQL_PATH 配置设置 Mysql 数据持久化目录）
+# 第四步：进入 docker 目录，基于模板创建 .env，并修改其中的 MYSQL_ROOT_PASSWORD / REDIS_PASSWORD（及 MYSQL_PATH 等持久化目录）
 cd ./docker/
-cat .env
+cp .env.example .env
 
 # 第五步：启动/停止项目
 docker compose up -d
@@ -709,7 +709,7 @@ king-ai/
 │
 ├── docker/                                    # Docker Compose 编排目录（mysql + redis + milvus + api(内嵌前端) + sample）
 │   ├── docker-compose.yml                     # 一键部署编排
-│   └── .env                                   # 部署环境变量
+│   └── .env.example                           # 部署环境变量模板（复制为 .env 后修改，.env 不入库）
 │
 ├── king-ai-api/                              # 后端API服务（8080；部署期内嵌前端产物，单包单端口）
 │   ├── pom.xml                                # Maven配置（继承父工程；前端产物经 king-ai-ui 的 sync:dist 同步内嵌）
@@ -1603,7 +1603,7 @@ Docker Compose部署脚本：
 ```
 # 第一步：代码clone本部 + 前往仓库目录
 git clone https://github.com/wukingsea/King-AI-Platform.git
-cd ./king-ai
+cd ./King-AI-Platform
 
 # 第二步：构建前端并同步产物（npm run build 构建 dist，npm run sync:dist 复制到 king-ai-api 静态资源目录）
 cd king-ai-ui && npm install && npm run build && npm run sync:dist && cd ..
@@ -1611,9 +1611,9 @@ cd king-ai-ui && npm install && npm run build && npm run sync:dist && cd ..
 # 第三步：构建后端
 mvn clean package
 
-# 第四步：进入 docker 目录（支持自定义 .env 配置，如修改 MYSQL_PATH 配置设置 Mysql 数据持久化目录）
+# 第四步：进入 docker 目录，基于模板创建 .env，并修改其中的 MYSQL_ROOT_PASSWORD / REDIS_PASSWORD（及 MYSQL_PATH 等持久化目录）
 cd ./docker/
-cat .env
+cp .env.example .env
 
 # 第五步：启动/停止项目
 docker compose up -d

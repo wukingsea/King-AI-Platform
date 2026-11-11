@@ -56,7 +56,7 @@ King AI Platform is a "cloud + local" AI Agent development platform. A single mo
 | `king-ai-ui` | Cloud frontend (dev port 3000, hash routing), organized as `src/modules/{framework,business}/*` |
 | `king-ai-desk` | Desk client; domain modules under `src/modules` (agent, chat, project, provider, mcp, skill, file, git, terminal, browser, settings, appCenter, apps/note, …) |
 | `king-ai-sample` | Sample MCP server (port 8091, endpoint `/sample/mcp`) exposing `get_current_time` and `calculator` |
-| `docker` | Deployment stack: `docker-compose.yml` + `.env` (mysql / redis / etcd / minio / milvus / attu / api / sample) |
+| `docker` | Deployment stack: `docker-compose.yml` + `.env.example` template (mysql / redis / etcd / minio / milvus / attu / api / sample) |
 | `doc` | Official documentation (Chinese), DB schema and seed data `db/tables_king_ai.sql`, screenshots |
 | `.agents/skills` | Development guidelines for AI coding assistants (`king-ai` for Cloud, `king-ai-desk` for Desk); see also `AGENTS.md` |
 | `ci` | GitHub Actions Maven workflow, currently disabled (`maven.yml.bak`) |
@@ -133,8 +133,9 @@ cd king-ai-ui && npm install && npm run build && npm run sync:dist && cd ..
 mvn clean package
 
 cd docker
-# Review .env first: set MYSQL_ROOT_PASSWORD / REDIS_PASSWORD and change
-# MYSQL_PATH / REDIS_PATH / MILVUS_PATH to persistent directories on your host
+cp .env.example .env
+# Edit .env: replace MYSQL_ROOT_PASSWORD / REDIS_PASSWORD, and optionally move
+# MYSQL_PATH / REDIS_PATH / MILVUS_PATH (default ./data/*) to other host directories
 docker compose up -d        # stop with: docker compose down
 ```
 

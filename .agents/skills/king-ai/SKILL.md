@@ -92,7 +92,7 @@ business/harness
 > ⚠️ **SQL 执行规范（强制，防乱码）**：写/执行任何含中文的 SQL（建表、菜单/权限初始化、联调造测试数据 INSERT 等）前，必须确保连接字符集为 utf8mb4，否则中文 `COMMENT`/表名/`INSERT` 数据落库会乱码。本项目 MySQL 跑在 docker 容器（容器名 `king-ai-mysql`，docker-compose 定义），服务端已配置 utf8mb4，但 CLIENT 侧 CLI 默认连接字符集是 **latin1**，必须显式指定 utf8mb4，例如：
 
 ```bash
-# docker 容器内执行（容器名 king-ai-mysql，密码见 docker/.env 的 MYSQL_ROOT_PASSWORD）
+# docker 容器内执行（容器名 king-ai-mysql，密码见 docker/.env（由 .env.example 复制）的 MYSQL_ROOT_PASSWORD）
 docker exec -i king-ai-mysql mysql --default-character-set=utf8mb4 -uroot -p"$MYSQL_ROOT_PASSWORD" king_ai < xxx.sql
 
 # 宿主机 mysql 客户端执行
